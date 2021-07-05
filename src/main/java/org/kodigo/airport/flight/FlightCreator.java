@@ -33,50 +33,57 @@ public class FlightCreator implements IFlightCreator {
     }
 
     @Override
-    public void addFlight(int flightNumber, String airline, IAircraft aircraft, String originCountry, String originCity, String destinationCountry, String destinationCity, String departureDate, String arrivalDate, String status) {
-        IFlight flight = new Flight(flightNumber, new Country(originCountry, destinationCountry),
-                new City(originCity, destinationCity), new Date(departureDate, arrivalDate),
-                status, airline, aircraft);
-
-        FlightManager.getInstance().getFlights().put(flightNumber, flight);
+    public void addFlight(IFlight flight) {
+        FlightManager.getInstance().getFlights().put(flight.getFlightNumber(), flight);
     }
 
     private void createFlightUsingKeyboard(){
         try {
-            System.out.println("Enter the flight number");
-            var flightNumber = Integer.parseInt(INPUT.readLine());
-            System.out.println("Enter the airline");
-            String airline = INPUT.readLine();
-
-            System.out.println("Enter the aircraft:");
-            IAircraft aircraft = AircraftCatalogue.getInstance().getAircraftFromCatalogue(INPUT.readLine());
-
-            System.out.println("Enter the origin country");
-            String originCountry = INPUT.readLine();
-            System.out.println("Enter the origin city");
-            String originCity = INPUT.readLine();
-            System.out.println("Enter the destination country");
-            String destinationCountry = INPUT.readLine();
-            System.out.println("Enter the destination city");
-            String destinationCity = INPUT.readLine();
-
+            int flightNumber = getNumericInput("Enter the flight number");
+            var airline = getStringInput("Enter the airline");
+            IAircraft aircraft = getAircraft();
+            var originCountry = getStringInput("Enter the origin country");
+            var originCity = getStringInput("Enter the origin city");
+            var destinationCountry = getStringInput("Enter the destination country");
+            var destinationCity = getStringInput("Enter the destination city");
             IDateTime dateTime = new DateTime();
-            System.out.println("Enter the departure date and time (dd/MM/yyyy HH:mm)");
-            String departureDate = dateTime.getDateTime();
-
-            System.out.println("Enter the arrival date and time (dd/MM/yyyy HH:mm)");
-            String arrivalDate = dateTime.getDateTime();
-
+            var departureDate = getDate(dateTime, "Enter the departure date and time (dd/MM/yyyy HH:mm)");
+            var arrivalDate = getDate(dateTime, "Enter the arrival date and time (dd/MM/yyyy HH:mm)");
             var status = Status.ON_TIME.toString();
 
-            addFlight(flightNumber, airline, aircraft, originCountry, originCity,
-                    destinationCountry, destinationCity, departureDate, arrivalDate, status);
+            IFlightDetails flightDetails = new FlightDetails(status, airline, aircraft);
+            ICountry country = new Country(originCountry, destinationCountry);
+            ICity city = new City(originCity, destinationCity);
+            IDate date = new Date(departureDate, arrivalDate);
+
+            IFlight flight = new Flight(flightNumber, flightDetails, country, city, date);
+            addFlight(flight);
 
         } catch (NumberFormatException e) {
             System.out.println("No valid number entered");
         } catch (IOException e) {
             System.out.println("There was a problem when adding a new flight");
         }
+    }
+
+    private String getDate(IDateTime dateTime, String s) {
+        System.out.println(s);
+        return dateTime.getDateTime();
+    }
+
+    private IAircraft getAircraft() throws IOException {
+        System.out.println("Enter the aircraft:");
+        return AircraftCatalogue.getInstance().getAircraftFromCatalogue(INPUT.readLine());
+    }
+
+    private String getStringInput(String s) throws IOException {
+        System.out.println(s);
+        return INPUT.readLine();
+    }
+
+    private int getNumericInput(String s) throws IOException {
+        System.out.println(s);
+        return Integer.parseInt(INPUT.readLine());
     }
 
 

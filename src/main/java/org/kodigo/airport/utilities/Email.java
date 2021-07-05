@@ -35,30 +35,41 @@ public class Email implements IMessageSender {
                 }
               });
 
-      Message message = new MimeMessage(session);
-      message.setFrom(new InternetAddress(username));
-      message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
-      message.setSubject("Airport Report");
+      var message = getMessageMetadata(email, username, session);
 
-      // Text content of the email
-      var msg = "The airport report is attached to this email in excel format";
-      var mimeBodyPart = new MimeBodyPart();
-      mimeBodyPart.setContent(msg, "text/html");
-      Multipart multipart = new MimeMultipart();
-      multipart.addBodyPart(mimeBodyPart);
+      var multipart = getTextContent();
 
-      // Attach the file
-      var attachmentBodyPart = new MimeBodyPart();
-      attachmentBodyPart.attachFile(new File("AirportReport.xlsx"));
-      multipart.addBodyPart(attachmentBodyPart);
-
-      message.setContent(multipart);
+      setEmailContent(message, multipart);
 
       Transport.send(message);
     } catch (MessagingException | IOException e) {
       System.out.println("Error when sending email");
     }
     System.out.println("The email was sent to " + email + " successfully");
+  }
+
+  private Message getMessageMetadata(String email, String username, Session session) throws MessagingException {
+    Message message = new MimeMessage(session);
+    message.setFrom(new InternetAddress(username));
+    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+    message.setSubject("Airport Report");
+    return message;
+  }
+
+  private void setEmailContent(Message message, Multipart multipart) throws IOException, MessagingException {
+    var attachmentBodyPart = new MimeBodyPart();
+    attachmentBodyPart.attachFile(new File("AirportReport.xlsx"));
+    multipart.addBodyPart(attachmentBodyPart);
+    message.setContent(multipart);
+  }
+
+  private Multipart getTextContent() throws MessagingException {
+    var msg = "The airport report is attached to this email in excel format";
+    var mimeBodyPart = new MimeBodyPart();
+    mimeBodyPart.setContent(msg, "text/html");
+    Multipart multipart = new MimeMultipart();
+    multipart.addBodyPart(mimeBodyPart);
+    return multipart;
   }
 
   private static String getEmail() {

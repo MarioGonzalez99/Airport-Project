@@ -42,45 +42,48 @@ public class FlightExcelFile implements IFileManager {
       // Get first sheet from the workbook
       var sheet = workbook.getSheetAt(0);
 
-      // Iterate through each rows from first sheet
-      for (Row row : sheet) {
-        if (row.getRowNum() == 0) continue;
-        // For each row, iterate through each columns
-        int flightNumber = (int) row.getCell(flightNumIndex).getNumericCellValue();
-        var airline = row.getCell(airlineIndex).getStringCellValue();
-        var aircraft =
-            AircraftCatalogue.getInstance()
-                .getAircraftFromCatalogue(row.getCell(aircraftIndex).getStringCellValue());
-        var originCountry = row.getCell(originCountryIndex).getStringCellValue();
-        var originCity = row.getCell(originCityIndex).getStringCellValue();
-        var departureDate =
-            row.getCell(departureDateIndex)
-                .getLocalDateTimeCellValue()
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-        var destinationCountry = row.getCell(destinationCountryIndex).getStringCellValue();
-        var destinationCity = row.getCell(destinationCityIndex).getStringCellValue();
-        var arrivalDate =
-            row.getCell(arrivalDateIndex)
-                .getLocalDateTimeCellValue()
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-        var status = Status.ON_TIME.toString();
+      getFlightsFromFile(sheet);
 
-        var flightCreator = new FlightCreator();
-        flightCreator.addFlight(
-            flightNumber,
-            airline,
-            aircraft,
-            originCountry,
-            originCity,
-            destinationCountry,
-            destinationCity,
-            departureDate,
-            arrivalDate,
-            status);
-      }
       System.out.println("Flight(s) added successfully");
     } catch (IOException e) {
       System.out.println("An error occurred when trying to process the excel file");
+    }
+  }
+
+  private void getFlightsFromFile(Sheet sheet) throws IOException {
+    // Iterate through each rows from first sheet
+    for (Row row : sheet) {
+      if (row.getRowNum() == 0) continue;
+      // For each row, iterate through each columns
+      int flightNumber = (int) row.getCell(flightNumIndex).getNumericCellValue();
+      var airline = row.getCell(airlineIndex).getStringCellValue();
+      var aircraft =
+          AircraftCatalogue.getInstance()
+              .getAircraftFromCatalogue(row.getCell(aircraftIndex).getStringCellValue());
+      var originCountry = row.getCell(originCountryIndex).getStringCellValue();
+      var originCity = row.getCell(originCityIndex).getStringCellValue();
+      var departureDate =
+          row.getCell(departureDateIndex)
+              .getLocalDateTimeCellValue()
+              .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+      var destinationCountry = row.getCell(destinationCountryIndex).getStringCellValue();
+      var destinationCity = row.getCell(destinationCityIndex).getStringCellValue();
+      var arrivalDate =
+          row.getCell(arrivalDateIndex)
+              .getLocalDateTimeCellValue()
+              .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+      var status = Status.ON_TIME.toString();
+
+      var flightCreator = new FlightCreator();
+
+      IFlightDetails flightDetails = new FlightDetails(status, airline, aircraft);
+      ICountry country = new Country(originCountry, destinationCountry);
+      ICity city = new City(originCity, destinationCity);
+      var date = new Date(departureDate, arrivalDate);
+
+      IFlight flight = new Flight(flightNumber, flightDetails, country, city, date);
+
+      flightCreator.addFlight(flight);
     }
   }
 
@@ -93,10 +96,9 @@ public class FlightExcelFile implements IFileManager {
       System.out.println("No flights found");
     }
     Map<IFlight, String> cancellationReport =
-        flightFilter.filterDescriptions(
-            FlightManager.getInstance().getCancellationReport(), flights);
+        getReport(FlightManager.getInstance().getCancellationReport(), flights, flightFilter);
     Map<IFlight, String> incidentReport =
-        flightFilter.filterDescriptions(FlightManager.getInstance().getIncidentsReport(), flights);
+            getReport(FlightManager.getInstance().getIncidentsReport(), flights, flightFilter);
     flights.sort(Comparator.comparing(IFlight::getFlightNumber));
 
     try (var outputStream = new FileOutputStream("AirportReport.xlsx");
@@ -105,14 +107,7 @@ public class FlightExcelFile implements IFileManager {
       XSSFSheet cancellationSheet = workbook.createSheet("Cancellation Report");
       XSSFSheet incidentSheet = workbook.createSheet("Incident Report");
 
-      // Header style
-      final XSSFCellStyle cellStyle = workbook.createCellStyle();
-      cellStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
-      cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-      XSSFFont valueCellFont = workbook.createFont();
-      valueCellFont.setColor(IndexedColors.WHITE.getIndex());
-      valueCellFont.setBold(true);
-      cellStyle.setFont(valueCellFont);
+      final XSSFCellStyle cellStyle = getHeaderCellStyle(workbook);
 
       createFlightSheet(flights, flightSheet, cellStyle);
       createDescriptionSheet(cancellationReport, cancellationSheet, cellStyle);
@@ -125,6 +120,22 @@ public class FlightExcelFile implements IFileManager {
     } catch (IOException e) {
       System.out.println("An error occurred when creating excel file");
     }
+  }
+
+  private Map<IFlight, String> getReport(
+      Map<IFlight, String> report, List<IFlight> flights, IFlightFilter filter) {
+    return filter.filterDescriptions(report, flights);
+  }
+
+  private XSSFCellStyle getHeaderCellStyle(XSSFWorkbook workbook) {
+    final XSSFCellStyle cellStyle = workbook.createCellStyle();
+    cellStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+    cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+    XSSFFont valueCellFont = workbook.createFont();
+    valueCellFont.setColor(IndexedColors.WHITE.getIndex());
+    valueCellFont.setBold(true);
+    cellStyle.setFont(valueCellFont);
+    return cellStyle;
   }
 
   private void createFlightSheet(
@@ -155,68 +166,29 @@ public class FlightExcelFile implements IFileManager {
   }
 
   private void writeFlightHeader(Row row, XSSFCellStyle cellStyle) {
-    var cell = row.createCell(flightNumIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Flight Number");
-
-    cell = row.createCell(airlineIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Airline");
-
-    cell = row.createCell(aircraftIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Aircraft");
-
-    cell = row.createCell(originCountryIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Origin Country");
-
-    cell = row.createCell(originCityIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Origin City");
-
-    cell = row.createCell(departureDateIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Departure Date");
-
-    cell = row.createCell(destinationCountryIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Destination Country");
-
-    cell = row.createCell(destinationCityIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Destination City");
-
-    cell = row.createCell(arrivalDateIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Arrival Date");
-
-    cell = row.createCell(statusIndex);
-    cell.setCellStyle(cellStyle);
-    cell.setCellValue("Status");
+    generateHeader(row, flightNumIndex, "Flight Number", cellStyle);
+    generateHeader(row, airlineIndex, "Airline", cellStyle);
+    generateHeader(row, aircraftIndex, "Aircraft", cellStyle);
+    generateHeader(row, originCountryIndex, "Origin Country", cellStyle);
+    generateHeader(row, originCityIndex, "Origin City", cellStyle);
+    generateHeader(row, departureDateIndex, "Departure Date", cellStyle);
+    generateHeader(row, destinationCountryIndex, "Destination Country", cellStyle);
+    generateHeader(row, destinationCityIndex, "Destination City", cellStyle);
+    generateHeader(row, arrivalDateIndex, "Arrival Date", cellStyle);
+    generateHeader(row, statusIndex, "Status", cellStyle);
   }
 
   private void writeFlight(IFlight flight, Row row) {
-    var cell = row.createCell(flightNumIndex);
-    cell.setCellValue(flight.getFlightNumber());
-    cell = row.createCell(airlineIndex);
-    cell.setCellValue(flight.getAirline());
-    cell = row.createCell(aircraftIndex);
-    cell.setCellValue(flight.getAircraft().toString());
-    cell = row.createCell(originCountryIndex);
-    cell.setCellValue(flight.getCountry().getOriginCountry());
-    cell = row.createCell(originCityIndex);
-    cell.setCellValue(flight.getCity().getOriginCity());
-    cell = row.createCell(departureDateIndex);
-    cell.setCellValue(flight.getDateFlight().getDates().get(0));
-    cell = row.createCell(destinationCountryIndex);
-    cell.setCellValue(flight.getCountry().getDestinationCountry());
-    cell = row.createCell(destinationCityIndex);
-    cell.setCellValue(flight.getCity().getDestinationCity());
-    cell = row.createCell(arrivalDateIndex);
-    cell.setCellValue(flight.getDateFlight().getDates().get(1));
-    cell = row.createCell(statusIndex);
-    cell.setCellValue(flight.getStatus());
+    generateCell(row, flightNumIndex, String.valueOf(flight.getFlightNumber()));
+    generateCell(row, airlineIndex, flight.getFlightDetails().getAirline());
+    generateCell(row, aircraftIndex, flight.getFlightDetails().getAircraft().toString());
+    generateCell(row, originCountryIndex, flight.getCountry().getOriginCountry());
+    generateCell(row, originCityIndex, flight.getCity().getOriginCity());
+    generateCell(row, departureDateIndex, flight.getDateFlight().getDates().get(0));
+    generateCell(row, destinationCountryIndex, flight.getCountry().getDestinationCountry());
+    generateCell(row, destinationCityIndex, flight.getCity().getDestinationCity());
+    generateCell(row, arrivalDateIndex, flight.getDateFlight().getDates().get(1));
+    generateCell(row, statusIndex, flight.getFlightDetails().getStatus());
   }
 
   private void createDescriptionSheet(
@@ -264,5 +236,16 @@ public class FlightExcelFile implements IFileManager {
     cell.setCellValue(flight.getFlightNumber());
     cell = row.createCell(1);
     cell.setCellValue(cancellation.get(flight));
+  }
+
+  private void generateHeader(Row row, int index, String header, XSSFCellStyle cellStyle) {
+    var cell = row.createCell(index);
+    cell.setCellStyle(cellStyle);
+    cell.setCellValue(header);
+  }
+
+  private void generateCell(Row row, int index, String value) {
+    var cell = row.createCell(index);
+    cell.setCellValue(value);
   }
 }

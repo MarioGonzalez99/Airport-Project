@@ -2,18 +2,15 @@ package org.kodigo.airport.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 @AllArgsConstructor
 public class Flight implements IFlight {
-  private int flightNumber;
-  private ICountry country;
-  private ICity city;
-  private IDate dateFlight;
-  @Setter private String status;
-  private String airline;
-  @Setter private IAircraft aircraft;
+  private final int flightNumber;
+  private final IFlightDetails flightDetails;
+  private final ICountry country;
+  private final ICity city;
+  private final IDate dateFlight;
 
   @Override
   public String toString() {
@@ -23,15 +20,15 @@ public class Flight implements IFlight {
 
     return String.format(
         leftAlignFormat,
-        flightNumber,
-        airline,
-        aircraft.getModel(),
+        getFlightNumber(),
+        flightDetails.getAirline(),
+        flightDetails.getAircraft().getModel(),
         country.getOriginCountry(),
         city.getOriginCity(),
         dateFlight.getDates().get(0),
         country.getDestinationCountry(),
         city.getDestinationCity(),
         dateFlight.getDates().get(1),
-        status);
+        flightDetails.getStatus());
   }
 }

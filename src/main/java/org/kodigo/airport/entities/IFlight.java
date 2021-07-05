@@ -12,13 +12,5 @@ public interface IFlight {
 
   IDate getDateFlight();
 
-  String getStatus();
-
-  String getAirline();
-
-  IAircraft getAircraft();
-
-  void setStatus(String status);
-
-  void setAircraft(IAircraft aircraft);
+  IFlightDetails getFlightDetails();
 }

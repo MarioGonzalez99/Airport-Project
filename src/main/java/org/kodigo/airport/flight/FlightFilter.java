@@ -17,23 +17,11 @@ public class FlightFilter implements IFlightFilter {
 
     @Override
     public List<IFlight> filterFlight() {
-        var msgOption = """
-                Generate report by:
-                1. Flight Number
-                2. Flight Date""";
-        System.out.println(msgOption);
-
+        displayFilterOption();
         List<IFlight> filteredFlights = new ArrayList<> (FlightManager.getInstance().getFlights().values());
         try {
             var numOption = Integer.parseInt(INPUT.readLine());
-            if (numOption == 1) {
-                filteredFlights = filterListByNumber();
-            } else if (numOption == 2) {
-                    filteredFlights = filterListByDate(filteredFlights);
-            } else {
-                System.out.println("No explicit option was selected, all flights selected");
-            }
-
+            filteredFlights = getFlightList(filteredFlights, numOption);
         } catch (NumberFormatException e) {
             System.out.println("Invalid number entered");
         } catch (IOException e) {
@@ -72,6 +60,25 @@ public class FlightFilter implements IFlightFilter {
             }
         } while (!validFlight);
         return flight;
+    }
+
+    private void displayFilterOption() {
+        var msgOption = """
+                Generate report by:
+                1. Flight Number
+                2. Flight Date""";
+        System.out.println(msgOption);
+    }
+
+    private List<IFlight> getFlightList(List<IFlight> filteredFlights, int numOption) {
+        if (numOption == 1) {
+            filteredFlights = filterListByNumber();
+        } else if (numOption == 2) {
+                filteredFlights = filterListByDate(filteredFlights);
+        } else {
+            System.out.println("No explicit option was selected, all flights selected");
+        }
+        return filteredFlights;
     }
 
     private List<IFlight> filterListByNumber() {

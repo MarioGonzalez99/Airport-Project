@@ -19,13 +19,7 @@ public class FlightUpdate implements IFlightUpdate {
 
     @Override
     public void updateFlight() {
-        var msgOption = """
-                What do you want to update?
-                1. Delay flight
-                2. On Time Flight
-                3. Cancel Flight
-                4. Land Flight""";
-        System.out.println(msgOption);
+        displayUpdateMsg();
         var optionNum = 0;
         try {
             optionNum = Integer.parseInt(INPUT.readLine());
@@ -45,13 +39,23 @@ public class FlightUpdate implements IFlightUpdate {
         }
     }
 
+    private void displayUpdateMsg() {
+        var msgOption = """
+                What do you want to update?
+                1. Delay flight
+                2. On Time Flight
+                3. Cancel Flight
+                4. Land Flight""";
+        System.out.println(msgOption);
+    }
+
     private static void delayedFlight() {
         System.out.println("Delayed FLight");
         IFlight flight = flightFilter.getFlight();
         if(flight == null) return;
         System.out.println(flight);
         changeDate(flight);
-        flight.setStatus(Status.DELAYED.toString());
+        flight.getFlightDetails().setStatus(Status.DELAYED.toString());
         System.out.println(flight);
     }
 
@@ -61,7 +65,7 @@ public class FlightUpdate implements IFlightUpdate {
         if(flight == null) return;
         System.out.println(flight);
         changeDate(flight);
-        flight.setStatus(Status.ON_TIME.toString());
+        flight.getFlightDetails().setStatus(Status.ON_TIME.toString());
         System.out.println(flight);
     }
 
@@ -72,7 +76,7 @@ public class FlightUpdate implements IFlightUpdate {
         System.out.println(flight);
         System.out.println("Enter a reason for the flight cancellation");
         fillDescriptionMap(FlightManager.getInstance().getCancellationReport(), flight);
-        flight.setStatus(Status.CANCELLED.toString());
+        flight.getFlightDetails().setStatus(Status.CANCELLED.toString());
         System.out.println(flight);
     }
 
@@ -83,7 +87,7 @@ public class FlightUpdate implements IFlightUpdate {
         System.out.println(flight);
         System.out.println("Was there any incidents in the flight? If yes, enter a description of it");
         fillDescriptionMap(FlightManager.getInstance().getIncidentsReport(), flight);
-        flight.setStatus(Status.LANDED.toString());
+        flight.getFlightDetails().setStatus(Status.LANDED.toString());
         System.out.println(flight);
     }
 

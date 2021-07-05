@@ -61,6 +61,11 @@ public class AircraftCatalogue implements IAircraftCatalogue {
 
   @Override
   public String getCatalogue() {
+    StringBuilder table = createTable();
+    return table.toString();
+  }
+
+  private StringBuilder createTable() {
     var leftAlignFormat = "| %-20s |%n";
     var separator = "+----------------------+\n";
     var table = new StringBuilder(separator);
@@ -72,7 +77,6 @@ public class AircraftCatalogue implements IAircraftCatalogue {
       table.append(String.format(leftAlignFormat, aircraft));
     }
     table.append(separator);
-
-    return table.toString();
+    return table;
   }
 }

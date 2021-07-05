@@ -10,19 +10,12 @@ public class AirportMenu implements IMenu {
   List<IOption> options = new ArrayList<>();
 
   public AirportMenu() {
-    IOption displayFlight = new DisplayFlightOption("Display current flights");
-    IOption addFlight = new AddFlightOption("Add new flight");
-    IOption updateFlight = new UpdateFlightOption("Update flight status");
-    IOption displayCatalogue = new DisplayCatalogueOption("Aircraft Catalogue");
-    IOption generateAndSendReport = new GenerateAndSendReportOption("Generate and Send Report");
-    IOption exit = new ExitOption("Exit program");
-
-    options.add(displayFlight);
-    options.add(addFlight);
-    options.add(updateFlight);
-    options.add(displayCatalogue);
-    options.add(generateAndSendReport);
-    options.add(exit);
+    options.add(new DisplayFlightOption("Display current flights"));
+    options.add(new AddFlightOption("Add new flight"));
+    options.add(new UpdateFlightOption("Update flight status"));
+    options.add(new DisplayCatalogueOption("Aircraft Catalogue"));
+    options.add(new GenerateAndSendReportOption("Generate and Send Report"));
+    options.add(new ExitOption("Exit program"));
   }
 
   @Override
